@@ -1,0 +1,21 @@
+{
+  "name": "Thai English Translator Pro",
+  "short_name": "Thai ↔ EN",
+  "description": "Installable Thai and English translator with speech, multiple voices, phrasebook and saved history.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080c16",
+  "theme_color": "#0a0f1a",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "lang": "en",
+  "orientation": "portrait",
+  "categories": ["utilities", "productivity"]
+}
