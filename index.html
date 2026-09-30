@@ -216,13 +216,48 @@ textarea::placeholder{color:#6e7f99}
   border:1px solid var(--line);background:var(--panel2);font-size:.78rem;
 }
 
-/* Phrases */
-.phrasegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+/* Phrases — conversation first */
+.phrasegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .phrase{
-  border:1px solid var(--line);border-radius:11px;background:#ffffff06;
-  padding:9px;text-align:left;color:var(--text);font-size:.9rem;
+  border:1px solid var(--line);border-radius:14px;background:#ffffff08;
+  padding:12px;text-align:left;color:var(--text);font-size:.92rem;
+  display:flex;flex-direction:column;gap:2px;min-height:78px;
 }
-.phrase span{display:block;color:var(--muted);font-size:.76rem;margin-top:3px}
+.phrase:active{background:#4f8cff22}
+.phrase .en{font-weight:650}
+.phrase .th{font-size:1.08rem;margin-top:2px}
+.phrase .std{color:var(--muted);font-size:.78rem;margin-top:1px}
+.phrase .rom{color:#7eb0ff;font-size:.74rem;font-style:italic;margin-top:2px}
+.phrase .speak-row{display:flex;justify-content:flex-end;margin-top:8px}
+.phrase .speak-mini{
+  padding:7px 14px;border-radius:20px;font-size:.8rem;font-weight:700;
+  background:linear-gradient(135deg,#4f8cff,#2f5fc4);color:#fff;border:0;
+}
+.phrasecats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.phrasecats button{
+  padding:8px 12px;border-radius:20px;font-size:.78rem;font-weight:650;
+  border:1px solid var(--line);background:#ffffff08;color:var(--muted);
+}
+.phrasecats button.on{background:#4f8cff33;color:#c5dcff;border-color:#4f8cff66}
+.roma-line{
+  margin-top:6px;padding-top:6px;border-top:1px solid var(--line);
+  font-size:.88rem;color:#8eb6ff;font-style:italic;min-height:1.2em;
+}
+.roma-line:empty{display:none}
+.talk-panel{
+  border:1px solid var(--line);border-radius:16px;
+  background:linear-gradient(160deg,#152238ee,#0f1726f5);
+  padding:14px;box-shadow:0 8px 28px #0003;
+}
+.talk-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.talk-box{
+  border:1px solid var(--line);border-radius:12px;padding:10px;background:#ffffff06;min-height:68px;
+}
+.talk-box label{display:block;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.talk-box .val{font-size:1.02rem;line-height:1.4;word-break:break-word}
+.talk-box .val:empty::before{content:attr(data-ph);color:#6e7f99;font-size:.88rem}
+.talk-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center}
+.mic.big{width:80px;height:80px;font-size:28px}
 
 /* Toast */
 .toast{
@@ -290,7 +325,7 @@ textarea::placeholder{color:#6e7f99}
       <label for="dialect">Thai regional dialect</label>
       <select id="dialect" style="max-width:58%">
         <option value="standard">Standard (Central)</option>
-        <option value="northern">Northern · Chiang Mai (Lanna)</option>
+        <option value="northern">Northern · Chiang Mai & Chiang Rai</option>
         <option value="isan">Northeastern (Isan)</option>
         <option value="southern">Southern</option>
       </select>
@@ -346,55 +381,73 @@ textarea::placeholder{color:#6e7f99}
     </p>
   </section>
 
-  <div class="workgrid">
-    <section class="card" id="sourceCard">
-      <div class="cardhead">
-        <strong id="sourceLabel">🇬🇧 English · Your message</strong>
-        <div class="tools">
-          <button class="mini" id="clearBtn" type="button">Clear</button>
-        </div>
+  <!-- CONVERSATION FIRST -->
+  <section class="talk-panel" aria-label="Conversation">
+    <div class="talk-row">
+      <div class="talk-box">
+        <label id="youLabel">You say</label>
+        <div class="val" id="youSay" data-ph="Tap a phrase or speak…"></div>
       </div>
-      <textarea id="sourceText" maxlength="5000" placeholder="Type here or use the microphone…" aria-label="Text to translate"></textarea>
-      <div class="foot">
-        <span id="sourceCount">0 / 5000</span>
-        <span id="listeningTag"></span>
+      <div class="talk-box thai">
+        <label id="themLabel">Thai · They hear</label>
+        <div class="val" id="theyHear" data-ph="Translation appears here"></div>
+        <div class="roma-line" id="romaLine" aria-label="Pronunciation"></div>
       </div>
-    </section>
+    </div>
+    <div class="talk-actions">
+      <button class="mic big" id="micBtn" aria-label="Listen / speak" type="button">🎙</button>
+      <button class="btn primary" id="speakBtn" type="button">🔊 Speak Thai</button>
+      <button class="btn" id="stopSpeakBtn" type="button">■ Stop</button>
+    </div>
+    <div class="miccaption" id="micCaption" style="margin-top:8px">Tap mic to speak English · or hold toward them when they reply</div>
+    <div id="replyHelp" style="margin-top:12px">
+      <div style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">When they reply — tap one</div>
+      <div class="phrasecats" id="replyHelpBtns" style="margin-bottom:0"></div>
+    </div>
+    <p class="notice" style="margin-top:8px" id="talkTip">Tip: Tap Speak on a phrase. When they answer, use the buttons above or the mic.</p>
+  </section>
 
-    <section class="card thai" id="targetCard">
-      <div class="cardhead">
-        <strong id="targetLabel">🇹🇭 Thai · Translation</strong>
-        <div class="tools">
-          <button class="mini" id="copyBtn" type="button">Copy</button>
-          <button class="mini" id="speakBtn" type="button">🔊 Speak</button>
-        </div>
-      </div>
-      <div class="translated" id="targetText" data-placeholder="Translation appears here…" aria-live="polite"></div>
-      <div class="foot">
-        <span id="targetCount">0 characters</span>
-        <span id="serviceLabel">Online translation</span>
-      </div>
-    </section>
-  </div>
+  <section class="section" id="phrasesSection">
+    <div class="sectionhead">
+      <h2 id="phrasesTitle">Tap to talk</h2>
+      <button class="mini" id="phrasesToggle" type="button" aria-expanded="true">Hide ▴</button>
+    </div>
+    <div class="sectionbody" id="phrasesBody">
+      <div class="phrasecats" id="phraseCats" role="tablist"></div>
+      <p class="notice" id="phrasesHint" style="text-align:left;margin:0 0 8px;padding:0">Each card has Speak — tap Speak to say it out loud.</p>
+      <div class="phrasegrid" id="phraseGrid"></div>
+    </div>
+  </section>
 
-  <div class="micwrap">
-    <button class="mic" id="micBtn" aria-label="Start speech recognition" type="button">🎙</button>
-    <div class="miccaption" id="micCaption">Tap to speak in English</div>
-  </div>
-
-  <div class="controls">
-    <button class="btn primary" id="translateBtn" type="button">⇄ Translate now</button>
-    <button class="btn" id="stopSpeakBtn" type="button">■ Stop voice</button>
-    <button class="btn" id="favoriteBtn" type="button">☆ Save phrase</button>
-  </div>
-
+  <!-- Advanced: free typing (collapsed style) -->
   <section class="section">
     <div class="sectionhead">
-      <h2>Useful phrases</h2>
-      <button class="mini" id="phrasesToggle" type="button" aria-expanded="false">Show ▾</button>
+      <h2>Type your own message</h2>
+      <button class="mini" id="typeToggle" type="button" aria-expanded="false">Show ▾</button>
     </div>
-    <div class="sectionbody" id="phrasesBody" hidden>
-      <div class="phrasegrid" id="phraseGrid"></div>
+    <div class="sectionbody" id="typeBody" hidden>
+      <div class="workgrid">
+        <section class="card" id="sourceCard">
+          <div class="cardhead">
+            <strong id="sourceLabel">🇬🇧 English · Your message</strong>
+            <div class="tools"><button class="mini" id="clearBtn" type="button">Clear</button></div>
+          </div>
+          <textarea id="sourceText" maxlength="5000" placeholder="Type anything…" aria-label="Text to translate"></textarea>
+          <div class="foot"><span id="sourceCount">0 / 5000</span><span id="listeningTag"></span></div>
+        </section>
+        <section class="card thai" id="targetCard">
+          <div class="cardhead">
+            <strong id="targetLabel">🇹🇭 Thai · Translation</strong>
+            <div class="tools"><button class="mini" id="copyBtn" type="button">Copy</button></div>
+          </div>
+          <div class="translated" id="targetText" data-placeholder="Translation appears here…" aria-live="polite"></div>
+          <div class="foot"><span id="targetCount">0 characters</span><span id="serviceLabel">Online translation</span></div>
+        </section>
+      </div>
+      <div class="controls" style="margin-top:10px">
+        <button class="btn primary" id="translateBtn" type="button">⇄ Translate now</button>
+        <button class="btn" id="favoriteBtn" type="button">☆ Save</button>
+      </div>
     </div>
   </section>
 
@@ -449,7 +502,7 @@ const defaults = {
 
 const DIALECT_LABELS = {
   standard: 'Standard Thai',
-  northern: 'Northern Thai · Chiang Mai (Lanna)',
+  northern: 'Northern · Chiang Mai & Chiang Rai',
   isan: 'Isan (Northeastern)',
   southern: 'Southern Thai'
 };
@@ -582,7 +635,7 @@ function updateDialectNote() {
   if (d === 'standard') {
     note.textContent = 'Uses Standard (Central) Thai — the form taught in schools and used in media. Understood everywhere including Chiang Mai.';
   } else if (d === 'northern') {
-    note.textContent = 'Chiang Mai / Lanna pack active. Common Northern words and phrases are adapted on this device so local people understand more naturally. Still based on Standard Thai engines.';
+    note.textContent = 'Chiang Mai & Chiang Rai pack active. Phrases include local wording + pronunciation. Common words are adapted on this device for clearer conversation with local people.';
   } else {
     note.textContent = dialectLabel() + ' pack is active on this device. Common words are adapted before/after online translation. Full neural dialect models are not available in browsers.';
   }
@@ -620,6 +673,13 @@ function esc(s) {
 }
 
 /* ---------- Mode ---------- */
+function syncTalk() {
+  const you = $('youSay');
+  const them = $('theyHear');
+  if (you) you.textContent = source.value.trim();
+  if (them) them.textContent = target.textContent.trim();
+}
+
 function setMode(m, keep = false) {
   if (listening) stopMic();
   window.speechSynthesis?.cancel();
@@ -627,28 +687,42 @@ function setMode(m, keep = false) {
   const en = m === 'en-th';
   $('enTh').className = 'lang' + (en ? ' active en' : '');
   $('thEn').className = 'lang' + (!en ? ' active th' : '');
-  $('sourceLabel').textContent = en ? '🇬🇧 English · Your message' : '🇹🇭 Thai · ข้อความของคุณ';
-  $('targetLabel').textContent = en ? '🇹🇭 Thai · คำแปล' : '🇬🇧 English · Translation';
-  $('sourceCard').classList.toggle('thai', !en);
-  $('targetCard').classList.toggle('thai', en);
+  if ($('sourceLabel')) $('sourceLabel').textContent = en ? '🇬🇧 English · Your message' : '🇹🇭 Thai · ข้อความของคุณ';
+  if ($('targetLabel')) $('targetLabel').textContent = en ? '🇹🇭 Thai · คำแปล' : '🇬🇧 English · Translation';
+  if ($('youLabel')) $('youLabel').textContent = en ? 'You say (English)' : 'You say (Thai)';
+  if ($('themLabel')) $('themLabel').textContent = en ? 'They hear (Thai)' : 'You hear (English)';
+  if ($('sourceCard')) $('sourceCard').classList.toggle('thai', !en);
+  if ($('targetCard')) $('targetCard').classList.toggle('thai', en);
   $('micBtn').classList.toggle('th', !en);
-  $('micCaption').textContent = en ? 'Tap to speak in English' : 'แตะเพื่อพูดภาษาไทย';
-  source.placeholder = en ? 'Type here or use the microphone…' : 'พิมพ์ที่นี่ หรือใช้ไมโครโฟน…';
-  target.dataset.placeholder = en ? 'คำแปลภาษาไทยจะแสดงที่นี่…' : 'Your English translation will appear here…';
+  $('micCaption').textContent = en
+    ? 'Tap mic to speak English · or point at them when they reply in Thai'
+    : 'แตะไมค์เพื่อพูดภาษาไทย · or listen for English';
+  if (source) source.placeholder = en ? 'Type anything…' : 'พิมพ์ที่นี่…';
+  if (target) target.dataset.placeholder = en ? 'Thai appears here…' : 'English appears here…';
+  if ($('speakBtn')) $('speakBtn').textContent = en ? '🔊 Speak Thai' : '🔊 Speak English';
+  if ($('talkTip')) {
+    $('talkTip').textContent = en
+      ? 'Tip: Tap a phrase → Speak Thai. When they answer, tap the mic and point the phone at them.'
+      : 'Tip: Speak or type Thai, then read the English. Use phrases for fast replies.';
+  }
   if (!keep) {
     source.value = '';
     target.textContent = '';
     lastTranslated = '';
+    setRoma('');
+    syncTalk();
     updateCounts();
   }
+  phraseCat = 'all';
   renderPhrases();
-  status('', 'Ready — type or tap the mic');
+  status('', 'Ready — tap a phrase or the mic');
 }
 
 function updateCounts() {
-  $('sourceCount').textContent = source.value.length + ' / 5000';
-  $('targetCount').textContent = target.textContent.length + ' characters';
-  $('translateBtn').disabled = !source.value.trim();
+  if ($('sourceCount')) $('sourceCount').textContent = source.value.length + ' / 5000';
+  if ($('targetCount')) $('targetCount').textContent = target.textContent.length + ' characters';
+  if ($('translateBtn')) $('translateBtn').disabled = !source.value.trim();
+  syncTalk();
 }
 
 /* ---------- Translation ---------- */
@@ -718,7 +792,9 @@ async function translateNow() {
       out = standardToDialect(out);
     }
     target.textContent = out;
-    $('serviceLabel').textContent = result.service;
+    setRoma(out);
+    syncTalk();
+    if ($('serviceLabel')) $('serviceLabel').textContent = result.service;
     lastTranslated = text;
     updateCounts();
     addHistory(text, out);
@@ -793,7 +869,9 @@ function loadEntry(h) {
   source.value = h.o;
   target.textContent = h.t;
   lastTranslated = h.o;
+  setRoma(h.t);
   updateCounts();
+  syncTalk();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   status('good', 'Loaded');
 }
@@ -909,6 +987,7 @@ function initSpeech() {
     if (final) {
       source.value = (source.value.trim() ? source.value.trim() + ' ' : '') + final.trim();
       updateCounts();
+      syncTalk();
       scheduleTranslate();
     }
     $('listeningTag').textContent = interim ? 'Hearing: ' + interim.slice(0, 40) : '';
@@ -955,104 +1034,226 @@ function stopMic() {
   $('micBtn').textContent = '🎙';
 }
 
-/* ---------- Phrases (Standard + dialect variants) ---------- */
+/* ---------- Phrases: [English, Thai, romanization] ---------- */
 const phrasesStandard = [
-  ['Hello', 'สวัสดี'],
-  ['Thank you', 'ขอบคุณ'],
-  ['How much is this?', 'อันนี้ราคาเท่าไหร่'],
-  ['Please help me', 'ช่วยฉันหน่อย'],
-  ['Where is the bathroom?', 'ห้องน้ำอยู่ที่ไหน'],
-  ['I don’t understand', 'ฉันไม่เข้าใจ'],
-  ['Can you speak slowly?', 'พูดช้า ๆ ได้ไหม'],
-  ['The bill, please', 'เก็บเงินด้วยครับ/ค่ะ'],
-  ['I would like water', 'ขอน้ำหน่อยครับ/ค่ะ'],
-  ['I need a doctor', 'ฉันต้องการพบแพทย์'],
-  ['I’m allergic to…', 'ฉันแพ้…'],
-  ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้ไหม'],
-  ['Where is the station?', 'สถานีอยู่ที่ไหน'],
-  ['Do you speak English?', 'คุณพูดภาษาอังกฤษได้ไหม'],
-  ['Delicious!', 'อร่อยมาก'],
-  ['See you later', 'แล้วเจอกัน']
+  ['Hello', 'สวัสดี', 'sa-wat-dee'],
+  ['Thank you', 'ขอบคุณ', 'khop-khun'],
+  ['How much is this?', 'อันนี้ราคาเท่าไหร่', 'an-nee raa-khaa tao-rai'],
+  ['Please help me', 'ช่วยฉันหน่อย', 'chuay chan noi'],
+  ['Where is the bathroom?', 'ห้องน้ำอยู่ที่ไหน', 'hong-naam yuu tee-nai'],
+  ['I don’t understand', 'ฉันไม่เข้าใจ', 'chan mai khao-jai'],
+  ['Can you speak slowly?', 'พูดช้า ๆ ได้ไหม', 'phuut chaa-chaa dai mai'],
+  ['The bill, please', 'เก็บเงินด้วยครับ/ค่ะ', 'gep ngern duay'],
+  ['I would like water', 'ขอน้ำหน่อย', 'khor naam noi'],
+  ['I need a doctor', 'ฉันต้องการพบแพทย์', 'chan dtawng-gaan phop phaet'],
+  ['Delicious!', 'อร่อยมาก', 'a-roi maak'],
+  ['See you later', 'แล้วเจอกัน', 'laeo jer gan']
 ];
 
-// Dialect-specific Thai side (English stays the same)
 const phrasesByDialect = {
   standard: phrasesStandard,
+  // [English, Northern Thai, romanization, Standard Thai]
+  // Tuned for speaking in Chiang Mai & Chiang Rai
   northern: [
-    ['Hello', 'สวัสดีเจ้า'],
-    ['Thank you', 'ขอบใจ'],
-    ['Thank you very much', 'ขอบใจหลาย'],
-    ['How much is this?', 'อันนี้ราคาเท่าไหร่เจ้า'],
-    ['Please help me', 'ช่วยเจ้าหน่อย'],
-    ['Where is the bathroom?', 'ห้องน้ำอยู่ตี้ไหน'],
-    ['I don’t understand', 'เจ้าบ่เข้าใจ'],
-    ['Can you speak slowly?', 'พูดช้า ๆ ได้บ่'],
-    ['It’s okay / No problem', 'บ่เป็นหยัง'],
-    ['The bill, please', 'เก็บเงินด้วยเจ้า'],
-    ['I would like water', 'ขอน้ำหน่อยเจ้า'],
-    ['I want to eat', 'อยากกิ๋น'],
-    ['Delicious!', 'ม่วนมาก / อร่อย'],
-    ['Where is the market?', 'ตลาดอยู่ตี้ไหน'],
-    ['Where is the temple?', 'วัดอยู่ตี้ไหน'],
-    ['I need a doctor', 'อยากเจอหมอ'],
-    ['I’m allergic to…', 'เจ้าแพ้…'],
-    ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้บ่'],
-    ['Where is the station?', 'สถานีอยู่ตี้ไหน'],
-    ['Do you speak English?', 'เจ้าพูดภาษาอังกฤษได้บ่'],
-    ['Where are you going?', 'ไปตี้ไหน'],
-    ['See you later', 'แล้วเจอกัน']
+    ['Hello', 'สวัสดีเจ้า', 'sa-wat-dee jao', 'สวัสดี'],
+    ['Thank you', 'ขอบใจ', 'khop-jai', 'ขอบคุณ'],
+    ['Thank you very much', 'ขอบใจหลาย', 'khop-jai laai', 'ขอบคุณมาก'],
+    ['Good morning', 'อรุณสวัสดิ์เจ้า', 'a-run sa-wat jao', 'อรุณสวัสดิ์'],
+    ['Nice to meet you', 'ยินดีที่ได้รู้จักเจ้า', 'yin-dee tee dai ruu-jak jao', 'ยินดีที่ได้รู้จัก'],
+    ['My name is…', 'ชื่อ… เจ้า', 'chue … jao', 'ชื่อ…'],
+    ['I am from…', 'มาจาก…', 'maa jaak …', 'มาจาก…'],
+    ['See you later', 'แล้วเจอกัน', 'laeo jer gan', 'แล้วเจอกัน'],
+    ['It’s okay / No problem', 'บ่เป็นหยัง', 'bor bpen yang', 'ไม่เป็นไร'],
+    ['Yes', 'เจ้า / ใช่', 'jao / chai', 'ใช่'],
+    ['No', 'บ่ / ไม่', 'bor / mai', 'ไม่'],
+    ['How much is this?', 'อันนี้ราคาเท่าไหร่เจ้า', 'an-nee raa-khaa tao-rai jao', 'อันนี้ราคาเท่าไหร่'],
+    ['Too expensive', 'แพงเกินไปเจ้า', 'phaeng gern bpai jao', 'แพงเกินไป'],
+    ['Can you lower the price?', 'ลดได้บ่เจ้า', 'lot dai bor jao', 'ลดได้ไหม'],
+    ['I’ll take it', 'เอาอันนี้เจ้า', 'ao an-nee jao', 'เอาอันนี้'],
+    ['The bill, please', 'เก็บเงินด้วยเจ้า', 'gep ngern duay jao', 'เก็บเงินด้วย'],
+    ['Do you have…?', 'มี… บ่เจ้า', 'mee … bor jao', 'มี… ไหม'],
+    ['Where is the bathroom?', 'ห้องน้ำอยู่ตี้ไหน', 'hong-naam yuu dtee-nai', 'ห้องน้ำอยู่ที่ไหน'],
+    ['Where is the market?', 'ตลาดอยู่ตี้ไหน', 'dta-laat yuu dtee-nai', 'ตลาดอยู่ที่ไหน'],
+    ['Where is the temple?', 'วัดอยู่ตี้ไหน', 'wat yuu dtee-nai', 'วัดอยู่ที่ไหน'],
+    ['Where is the bus station?', 'สถานีรถอยู่ตี้ไหน', 'sa-taa-nee rot yuu dtee-nai', 'สถานีรถอยู่ที่ไหน'],
+    ['Songthaew to the city?', 'สองแถวเข้าเมืองบ่', 'sawng-thaew khao mueang bor', 'สองแถวเข้าเมืองไหม'],
+    ['How do I get to …?', 'ไป… ไปจั่งใด', 'bpai … bpai jang-dai', 'ไป… อย่างไร'],
+    ['Where are you going?', 'ไปตี้ไหน', 'bpai dtee-nai', 'ไปที่ไหน'],
+    ['Turn left', 'เลี้ยวซ้าย', 'liao sai', 'เลี้ยวซ้าย'],
+    ['Turn right', 'เลี้ยวขวา', 'liao kwaa', 'เลี้ยวขวา'],
+    ['Straight ahead', 'ตรงไป', 'trong bpai', 'ตรงไป'],
+    ['Stop here please', 'จอดตรงนี้เจ้า', 'jot trong nee jao', 'จอดตรงนี้'],
+    ['I would like water', 'ขอน้ำหน่อยเจ้า', 'khor naam noi jao', 'ขอน้ำหน่อย'],
+    ['I want to eat', 'อยากกิ๋น', 'yaak gin', 'อยากกิน'],
+    ['Not spicy', 'บ่เผ็ด / ไม่เผ็ด', 'bor phet / mai phet', 'ไม่เผ็ด'],
+    ['Delicious!', 'ม่วน / อร่อย', 'muan / a-roi', 'อร่อย'],
+    ['The menu, please', 'ขอดูเมนูเจ้า', 'khor duu menu jao', 'ขอดูเมนู'],
+    ['I don’t eat meat', 'บ่กิ๋นเนื้อ', 'bor gin nuea', 'ไม่กินเนื้อ'],
+    ['I don’t understand', 'เจ้าบ่เข้าใจ', 'jao bor khao-jai', 'ฉันไม่เข้าใจ'],
+    ['Can you speak slowly?', 'พูดช้า ๆ ได้บ่', 'phuut chaa-chaa dai bor', 'พูดช้า ๆ ได้ไหม'],
+    ['Please use Central Thai', 'พูดภาษาไทยกลางได้บ่', 'phuut phaa-saa thai glaang dai bor', 'พูดภาษาไทยกลางได้ไหม'],
+    ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้บ่', 'chuay khian hai noi dai bor', 'ช่วยเขียนให้หน่อยได้ไหม'],
+    ['Do you speak English?', 'เจ้าพูดภาษาอังกฤษได้บ่', 'jao phuut phaa-saa ang-grit dai bor', 'คุณพูดภาษาอังกฤษได้ไหม'],
+    ['Please help me', 'ช่วยเจ้าหน่อย', 'chuay jao noi', 'ช่วยหน่อย'],
+    ['Help!', 'ช่วยด้วย', 'chuay duay', 'ช่วยด้วย'],
+    ['I need a doctor', 'อยากเจอหมอ', 'yaak jer mor', 'ต้องการพบแพทย์'],
+    ['I’m allergic to…', 'เจ้าแพ้…', 'jao phae …', 'ฉันแพ้…'],
+    ['Call the police', 'เรียกตำรวจ', 'riak dtam-ruat', 'เรียกตำรวจ'],
+    ['Where is the hospital?', 'โรงพยาบาลอยู่ตี้ไหน', 'rohng pha-yaa-baan yuu dtee-nai', 'โรงพยาบาลอยู่ที่ไหน'],
+    ['I am lost', 'หลงทาง', 'long thaang', 'หลงทาง'],
+    ['How much for a room?', 'ห้องพักราคาเท่าไหร่เจ้า', 'hong pak raa-khaa tao-rai jao', 'ห้องพักราคาเท่าไหร่'],
+    ['One night', 'หนึ่งคืน', 'neung keun', 'หนึ่งคืน'],
+    ['Wi‑Fi password?', 'รหัสไวไฟคือหยังเจ้า', 'ra-hat wai-fai keu yang jao', 'รหัสไวไฟคืออะไร'],
+    ['No problem', 'บ่เป็นหยัง', 'bor bpen yang', 'ไม่เป็นไร'],
+    ['Sorry', 'ขอโทษเจ้า', 'khor toht jao', 'ขอโทษ'],
+    ['Excuse me', 'ขอทางเจ้า', 'khor thaang jao', 'ขอทาง'],
+    ['Wait a moment', 'รอสักครู่เจ้า', 'ror sak khru jao', 'รอสักครู่'],
+    ['I like it', 'ชอบเจ้า', 'chawp jao', 'ชอบ'],
+    ['Beautiful', 'งาม / สวย', 'ngaam / suay', 'สวย'],
+    ['What is this?', 'อันนี้คือหยังเจ้า', 'an-nee keu yang jao', 'อันนี้คืออะไร'],
+    ['Photo ok?', 'ถ่ายรูปได้บ่เจ้า', 'taai ruup dai bor jao', 'ถ่ายรูปได้ไหม'],
+    ['Goodbye', 'ลาก่อนเจ้า', 'laa gawn jao', 'ลาก่อน']
   ],
   isan: [
-    ['Hello', 'สวัสดี'],
-    ['Thank you', 'ขอบใจเด้อ'],
-    ['How much is this?', 'อันนี้ราคาเท่าใด'],
-    ['Please help me', 'ช่วยเจ้าหน่อย'],
-    ['Where is the bathroom?', 'ห้องน้ำอยู่ใส'],
-    ['I don’t understand', 'เจ้าบ่เข้าใจ'],
-    ['Can you speak slowly?', 'พูดช้า ๆ ได้บ่'],
-    ['The bill, please', 'เก็บเงินด้วยเด้อ'],
-    ['I would like water', 'ขอน้ำหน่อยเด้อ'],
-    ['I need a doctor', 'อยากเจอหมอ'],
-    ['I’m allergic to…', 'เจ้าแพ้…'],
-    ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้บ่'],
-    ['Where is the station?', 'สถานีอยู่ใส'],
-    ['Do you speak English?', 'เจ้าพูดภาษาอังกฤษได้บ่'],
-    ['Delicious!', 'แซบหลาย'],
-    ['See you later', 'แล้วพบกัน']
+    ['Hello', 'สวัสดี', 'sa-wat-dee'],
+    ['Thank you', 'ขอบใจเด้อ', 'khop-jai der'],
+    ['How much is this?', 'อันนี้ราคาเท่าใด', 'an-nee raa-khaa tao-dai'],
+    ['Please help me', 'ช่วยเจ้าหน่อย', 'chuay jao noi'],
+    ['Where is the bathroom?', 'ห้องน้ำอยู่ใส', 'hong-naam yuu sai'],
+    ['I don’t understand', 'เจ้าบ่เข้าใจ', 'jao bor khao-jai'],
+    ['Can you speak slowly?', 'พูดช้า ๆ ได้บ่', 'phuut chaa-chaa dai bor'],
+    ['The bill, please', 'เก็บเงินด้วยเด้อ', 'gep ngern duay der'],
+    ['I would like water', 'ขอน้ำหน่อยเด้อ', 'khor naam noi der'],
+    ['Delicious!', 'แซบหลาย', 'saep laai'],
+    ['See you later', 'แล้วพบกัน', 'laeo phop gan']
   ],
   southern: [
-    ['Hello', 'สวัสดี'],
-    ['Thank you', 'ขอบคุณ'],
-    ['How much is this?', 'อันนี้ราคาเท่าไหร่'],
-    ['Please help me', 'ช่วยแอหน่อย'],
-    ['Where is the bathroom?', 'ห้องน้ำอยู่ที่ไหน'],
-    ['I don’t understand', 'แอไม่เข้าใจ'],
-    ['Can you speak slowly?', 'แหลงช้า ๆ ได้ไหม'],
-    ['The bill, please', 'เก็บเงินด้วย'],
-    ['I would like water', 'ขอน้ำหน่อย'],
-    ['I need a doctor', 'อยากเจอหมอ'],
-    ['I’m allergic to…', 'แอแพ้…'],
-    ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้ไหม'],
-    ['Where is the station?', 'สถานีอยู่ที่ไหน'],
-    ['Do you speak English?', 'แอแหลงภาษาอังกฤษได้ไหม'],
-    ['Delicious!', 'หรอยมาก'],
-    ['See you later', 'แล้วเจอกัน']
+    ['Hello', 'สวัสดี', 'sa-wat-dee'],
+    ['Thank you', 'ขอบคุณ', 'khop-khun'],
+    ['How much is this?', 'อันนี้ราคาเท่าไหร่', 'an-nee raa-khaa tao-rai'],
+    ['Please help me', 'ช่วยแอหน่อย', 'chuay ae noi'],
+    ['Where is the bathroom?', 'ห้องน้ำอยู่ที่ไหน', 'hong-naam yuu tee-nai'],
+    ['I don’t understand', 'แอไม่เข้าใจ', 'ae mai khao-jai'],
+    ['Can you speak slowly?', 'แหลงช้า ๆ ได้ไหม', 'laeng chaa-chaa dai mai'],
+    ['Delicious!', 'หรอยมาก', 'roi maak'],
+    ['See you later', 'แล้วเจอกัน', 'laeo jer gan']
   ]
 };
+
+let phraseCat = 'all';
+
+// Categories by English keyword groups (for Northern speaking focus)
+const PHRASE_CATS = [
+  { id: 'all', label: 'All' },
+  { id: 'greet', label: 'Hello' },
+  { id: 'shop', label: 'Shopping' },
+  { id: 'place', label: 'Places' },
+  { id: 'food', label: 'Food' },
+  { id: 'help', label: 'Help' }
+];
+
+function phraseCategory(p) {
+  const e = (p[0] || '').toLowerCase();
+  if (/hello|thank|see you|name|from|okay|problem|morning|meet|yes|no|sorry|excuse|goodbye|wait|like|beautiful|photo/.test(e)) return 'greet';
+  if (/how much|expensive|price|bill|lower|take it|have\?\?|room|night|wi/.test(e) || /do you have/.test(e)) return 'shop';
+  if (/where|bathroom|market|temple|station|going|songthaew|get to|left|right|straight|stop here|lost|hospital/.test(e)) return 'place';
+  if (/water|eat|delicious|food|allergic|spicy|menu|meat/.test(e)) return 'food';
+  if (/help|doctor|understand|slowly|write|english|speak|central thai|police|allergic/.test(e)) return 'help';
+  return 'greet';
+}
+
+// Quick replies when locals speak back (always Standard-friendly + Northern where useful)
+const REPLY_HELP = [
+  ['Speak slowly', 'พูดช้า ๆ ได้บ่', 'phuut chaa-chaa dai bor', 'พูดช้า ๆ ได้ไหม'],
+  ['Use Central Thai', 'พูดภาษาไทยกลางได้บ่', 'phuut phaa-saa thai glaang dai bor', 'พูดภาษาไทยกลางได้ไหม'],
+  ['Write it please', 'ช่วยเขียนให้หน่อยได้บ่', 'chuay khian hai noi dai bor', 'ช่วยเขียนให้หน่อย'],
+  ['I don’t understand', 'เจ้าบ่เข้าใจ', 'jao bor khao-jai', 'ฉันไม่เข้าใจ'],
+  ['English?', 'พูดภาษาอังกฤษได้บ่', 'phuut phaa-saa ang-grit dai bor', 'พูดภาษาอังกฤษได้ไหม']
+];
+
+function renderReplyHelp() {
+  const el = $('replyHelpBtns');
+  if (!el) return;
+  el.innerHTML = REPLY_HELP.map((p, i) =>
+    `<button type="button" data-reply="${i}">${esc(p[0])}</button>`
+  ).join('');
+}
 
 function currentPhrases() {
   const d = settings.dialect || 'standard';
   return phrasesByDialect[d] || phrasesStandard;
 }
 
-function renderPhrases() {
+function filteredPhrases() {
   const list = currentPhrases();
-  $('phraseGrid').innerHTML = list.map((p, i) =>
-    `<button class="phrase" data-phrase="${i}" type="button">
-      ${esc(mode === 'en-th' ? p[0] : p[1])}
-      <span>${esc(mode === 'en-th' ? p[1] : p[0])}</span>
-    </button>`
-  ).join('');
+  if (phraseCat === 'all') return list.map((p, i) => ({ p, i }));
+  return list.map((p, i) => ({ p, i })).filter(x => phraseCategory(x.p) === phraseCat);
+}
+
+function usePhrase(p, andSpeak) {
+  if (!p) return;
+  const th = p[1];
+  const en = p[0];
+  const rom = p[2] || '';
+  source.value = mode === 'en-th' ? en : th;
+  target.textContent = mode === 'en-th' ? th : en;
+  setRoma(mode === 'en-th' ? th : rom);
+  lastTranslated = source.value;
+  updateCounts();
+  syncTalk();
+  status('good', 'Phrase ready');
+  if (andSpeak && mode === 'en-th' && th) {
+    speak(th, 'th-TH');
+    addHistory(en, th);
+  } else if (andSpeak && mode === 'th-en' && en) {
+    speak(en, 'en-US');
+  } else if (mode !== 'en-th') {
+    translateNow();
+  } else {
+    addHistory(en, th);
+  }
+}
+
+function renderPhrases() {
+  const isNorthern = (settings.dialect || 'standard') === 'northern';
+  if ($('phrasesTitle')) {
+    $('phrasesTitle').textContent = isNorthern
+      ? 'Tap to talk · Chiang Mai & Chiang Rai'
+      : 'Tap to talk';
+  }
+  if ($('phrasesHint')) {
+    $('phrasesHint').textContent = isNorthern
+      ? 'Northern on top · Standard Thai under it · Blue = pronunciation · Tap Speak'
+      : 'Tap Speak on a card to say it out loud. Blue text = pronunciation.';
+  }
+  const cats = $('phraseCats');
+  if (cats) {
+    cats.innerHTML = PHRASE_CATS.map(c =>
+      `<button type="button" data-cat="${c.id}" class="${phraseCat === c.id ? 'on' : ''}">${esc(c.label)}</button>`
+    ).join('');
+  }
+  const items = filteredPhrases();
+  $('phraseGrid').innerHTML = items.length ? items.map(({ p, i }) => {
+    const en = p[0], th = p[1], rom = p[2] || '', std = p[3] || '';
+    return `<div class="phrase" data-phrase="${i}">
+      <div class="en">${esc(en)}</div>
+      <div class="th">${esc(th)}</div>
+      ${std && std !== th ? `<div class="std">Standard: ${esc(std)}</div>` : ''}
+      ${rom ? `<div class="rom">${esc(rom)}</div>` : ''}
+      <div class="speak-row">
+        <button class="speak-mini" data-speak="${i}" type="button">🔊 Speak</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty">No phrases in this category.</div>';
+}
+
+function setRoma(text) {
+  const el = $('romaLine');
+  if (!el) return;
+  const list = currentPhrases();
+  const hit = list.find(p => p[1] === text || p[0] === text) ||
+    REPLY_HELP.find(p => p[1] === text || p[0] === text);
+  el.textContent = hit && hit[2] ? hit[2] : '';
 }
 
 /* ---------- Export / Import ---------- */
@@ -1171,8 +1372,7 @@ $('stopSpeakBtn').onclick = () => {
   speechSynthesis?.cancel();
   status('', listening ? 'Listening…' : 'Ready');
 };
-$('speakBtn').onclick = () => speak(target.textContent, mode === 'en-th' ? 'th-TH' : 'en-US');
-$('copyBtn').onclick = async () => {
+if ($('copyBtn')) $('copyBtn').onclick = async () => {
   if (!target.textContent.trim()) { toast('Nothing to copy.'); return; }
   try {
     await navigator.clipboard.writeText(target.textContent);
@@ -1181,10 +1381,12 @@ $('copyBtn').onclick = async () => {
     toast('Select and copy the text manually');
   }
 };
-$('clearBtn').onclick = () => {
+if ($('clearBtn')) $('clearBtn').onclick = () => {
   source.value = '';
   target.textContent = '';
   lastTranslated = '';
+  setRoma('');
+  syncTalk();
   updateCounts();
   source.focus();
 };
@@ -1229,14 +1431,49 @@ $('phrasesToggle').onclick = () => {
   $('phrasesToggle').textContent = open ? 'Hide ▴' : 'Show ▾';
   $('phrasesToggle').setAttribute('aria-expanded', String(open));
 };
+if ($('typeToggle')) {
+  $('typeToggle').onclick = () => {
+    const b = $('typeBody');
+    const open = b.hidden;
+    b.hidden = !open;
+    $('typeToggle').textContent = open ? 'Hide ▴' : 'Show ▾';
+    $('typeToggle').setAttribute('aria-expanded', String(open));
+  };
+}
+if ($('phraseCats')) {
+  $('phraseCats').onclick = e => {
+    const b = e.target.closest('[data-cat]');
+    if (!b) return;
+    phraseCat = b.dataset.cat;
+    renderPhrases();
+  };
+}
+if ($('replyHelpBtns')) {
+  renderReplyHelp();
+  $('replyHelpBtns').onclick = e => {
+    const b = e.target.closest('[data-reply]');
+    if (!b) return;
+    const p = REPLY_HELP[Number(b.dataset.reply)];
+    usePhrase(p, true);
+  };
+}
 $('phraseGrid').onclick = e => {
-  const b = e.target.closest('[data-phrase]');
-  if (!b) return;
-  const p = currentPhrases()[Number(b.dataset.phrase)];
-  if (!p) return;
-  source.value = mode === 'en-th' ? p[0] : p[1];
-  updateCounts();
-  translateNow();
+  const speakBtn = e.target.closest('[data-speak]');
+  if (speakBtn) {
+    e.stopPropagation();
+    const p = currentPhrases()[Number(speakBtn.dataset.speak)];
+    usePhrase(p, true);
+    return;
+  }
+  const card = e.target.closest('[data-phrase]');
+  if (!card) return;
+  const p = currentPhrases()[Number(card.dataset.phrase)];
+  usePhrase(p, false);
+};
+$('speakBtn').onclick = () => {
+  const t = target.textContent.trim() || $('theyHear')?.textContent?.trim();
+  if (!t) { toast('Pick a phrase or translate first.'); return; }
+  speak(t, mode === 'en-th' ? 'th-TH' : 'en-US');
 };
 
 $('exportBtn').onclick = exportHistory;
