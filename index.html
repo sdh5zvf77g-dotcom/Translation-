@@ -395,16 +395,17 @@ textarea::placeholder{color:#6e7f99}
       </div>
     </div>
     <div class="talk-actions">
-      <button class="mic big" id="micBtn" aria-label="Listen / speak" type="button">🎙</button>
+      <button class="btn" id="micYouBtn" type="button">🎙 You</button>
+      <button class="mic big th" id="micBtn" aria-label="Listen to Thai" type="button">👂 Them</button>
       <button class="btn primary" id="speakBtn" type="button">🔊 Speak Thai</button>
       <button class="btn" id="stopSpeakBtn" type="button">■ Stop</button>
     </div>
-    <div class="miccaption" id="micCaption" style="margin-top:8px">Tap mic to speak English · or hold toward them when they reply</div>
+    <div class="miccaption" id="micCaption" style="margin-top:8px">You = speak English · Them = listen when they reply in Thai</div>
     <div id="replyHelp" style="margin-top:12px">
       <div style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">When they reply — tap one</div>
       <div class="phrasecats" id="replyHelpBtns" style="margin-bottom:0"></div>
     </div>
-    <p class="notice" style="margin-top:8px" id="talkTip">Tip: Tap Speak on a phrase. When they answer, use the buttons above or the mic.</p>
+    <p class="notice" style="margin-top:8px" id="talkTip">Tip: Tap Speak on a phrase. When they answer, tap Them (mic) and point the phone at them.</p>
   </section>
 
   <section class="section" id="phrasesSection">
@@ -694,9 +695,11 @@ function setMode(m, keep = false) {
   if ($('sourceCard')) $('sourceCard').classList.toggle('thai', !en);
   if ($('targetCard')) $('targetCard').classList.toggle('thai', en);
   $('micBtn').classList.toggle('th', !en);
-  $('micCaption').textContent = en
-    ? 'Tap mic to speak English · or point at them when they reply in Thai'
-    : 'แตะไมค์เพื่อพูดภาษาไทย · or listen for English';
+  if ($('micCaption')) {
+    $('micCaption').textContent = en
+      ? 'You = your English · Them = listen to their Thai reply'
+      : 'You / Them mic · or type below';
+  }
   if (source) source.placeholder = en ? 'Type anything…' : 'พิมพ์ที่นี่…';
   if (target) target.dataset.placeholder = en ? 'Thai appears here…' : 'English appears here…';
   if ($('speakBtn')) $('speakBtn').textContent = en ? '🔊 Speak Thai' : '🔊 Speak English';
@@ -777,9 +780,8 @@ async function translateNow() {
   controller = new AbortController();
   const [from, to] = fromTo();
   status('busy', 'Translating…');
-  $('translateBtn').disabled = true;
+  if ($('translateBtn')) $('translateBtn').disabled = true;
   try {
-    // When user is typing/speaking Thai in a regional dialect, normalize to Standard first
     let sendText = text;
     if (from === 'th' && settings.dialect !== 'standard') {
       sendText = dialectToStandard(text);
@@ -787,7 +789,6 @@ async function translateNow() {
     const result = await requestTranslation(sendText, from, to, controller.signal);
     if (n !== requestNo) return;
     let out = result.text;
-    // When translating into Thai, adapt Standard output toward the chosen dialect
     if (to === 'th' && settings.dialect !== 'standard') {
       out = standardToDialect(out);
     }
@@ -799,11 +800,12 @@ async function translateNow() {
     updateCounts();
     addHistory(text, out);
     status('good', 'Ready · ' + result.service);
+    // Auto-speak Thai when we produced Thai; speak English when listening to them
     if (settings.autoSpeak) speak(out, to === 'th' ? 'th-TH' : 'en-US');
   } catch (e) {
     if (e.name === 'AbortError') return;
     status('bad', 'Could not translate. Check connection.');
-    toast('Translation failed. Try again.');
+    toast('Translation failed. Check internet and try again.');
   } finally {
     if (n === requestNo) updateCounts();
   }
@@ -957,12 +959,15 @@ function testVoice(lang) {
   speak(sample, lang);
 }
 
-/* ---------- Speech recognition ---------- */
+/* ---------- Speech recognition (You = English, Them = Thai) ---------- */
+let listenAs = 'you'; // 'you' | 'them'
+
 function initSpeech() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
-    $('micBtn').disabled = true;
-    $('micCaption').textContent = 'Speech recognition not supported. Use typing.';
+    if ($('micBtn')) $('micBtn').disabled = true;
+    if ($('micYouBtn')) $('micYouBtn').disabled = true;
+    if ($('micCaption')) $('micCaption').textContent = 'Speech recognition not supported here. Use phrases + typing.';
     return;
   }
   recognition = new SR();
@@ -972,10 +977,11 @@ function initSpeech() {
 
   recognition.onstart = () => {
     listening = true;
-    $('micBtn').classList.add('live');
-    $('micBtn').textContent = '■';
-    $('listeningTag').textContent = 'Listening…';
-    status('good', mode === 'en-th' ? 'Listening in English…' : 'กำลังฟังภาษาไทย…');
+    const btn = listenAs === 'them' ? $('micBtn') : ($('micYouBtn') || $('micBtn'));
+    if ($('micBtn')) { $('micBtn').classList.toggle('live', listenAs === 'them'); if (listenAs === 'them') $('micBtn').textContent = '■'; }
+    if ($('micYouBtn') && listenAs === 'you') $('micYouBtn').classList.add('primary');
+    if ($('listeningTag')) $('listeningTag').textContent = 'Listening…';
+    status('good', listenAs === 'them' ? 'Listening to Thai… point phone at them' : 'Listening to you (English)…');
   };
   recognition.onresult = e => {
     let final = '', interim = '';
@@ -985,43 +991,72 @@ function initSpeech() {
       else interim += val;
     }
     if (final) {
-      source.value = (source.value.trim() ? source.value.trim() + ' ' : '') + final.trim();
-      updateCounts();
-      syncTalk();
-      scheduleTranslate();
+      const text = final.trim();
+      if (listenAs === 'them') {
+        // They spoke Thai → show Thai on left briefly, English translation on right
+        status('busy', 'Translating what they said…');
+        (async () => {
+          try {
+            const adapted = dialectToStandard(text);
+            const result = await requestTranslation(adapted, 'th', 'en', (controller = new AbortController()).signal);
+            source.value = text;
+            target.textContent = result.text;
+            setRoma('');
+            lastTranslated = text;
+            updateCounts();
+            syncTalk();
+            addHistory(text, result.text);
+            status('good', 'They said · ' + result.service);
+            if (settings.autoSpeak) speak(result.text, 'en-US');
+          } catch (err) {
+            if (err.name === 'AbortError') return;
+            source.value = text;
+            target.textContent = '';
+            syncTalk();
+            status('bad', 'Could not translate their speech. Try again or ask them to speak slowly.');
+            toast('Could not translate. Check connection.');
+          }
+        })();
+      } else {
+        source.value = (source.value.trim() ? source.value.trim() + ' ' : '') + text;
+        updateCounts();
+        syncTalk();
+        scheduleTranslate();
+      }
     }
-    $('listeningTag').textContent = interim ? 'Hearing: ' + interim.slice(0, 40) : '';
+    if ($('listeningTag')) $('listeningTag').textContent = interim ? 'Hearing: ' + interim.slice(0, 40) : '';
   };
   recognition.onerror = e => {
-    if (e.error === 'not-allowed') status('bad', 'Mic permission denied.');
+    if (e.error === 'not-allowed') status('bad', 'Microphone permission denied. Allow mic in browser settings.');
     else if (e.error !== 'no-speech' && e.error !== 'aborted')
       status('bad', 'Speech error: ' + e.error);
   };
   recognition.onend = () => {
     listening = false;
-    $('micBtn').classList.remove('live');
-    $('micBtn').textContent = '🎙';
-    $('listeningTag').textContent = '';
+    if ($('micBtn')) { $('micBtn').classList.remove('live'); $('micBtn').textContent = '👂 Them'; }
+    if ($('micYouBtn')) $('micYouBtn').classList.remove('primary');
+    if ($('listeningTag')) $('listeningTag').textContent = '';
     if (settings.continuous && !manualStop) {
       try {
-        recognition.lang = mode === 'en-th' ? 'en-US' : 'th-TH';
+        recognition.lang = listenAs === 'them' ? 'th-TH' : 'en-US';
         recognition.start();
         listening = true;
         return;
       } catch {}
     }
-    status('', 'Ready — type or tap the mic');
+    status('', 'Ready — tap a phrase, You, or Them');
   };
 }
 
-function startMic() {
-  if (!recognition) { toast('Speech recognition unavailable.'); return; }
+function startMic(as) {
+  if (!recognition) { toast('Speech recognition unavailable in this browser.'); return; }
+  listenAs = as === 'them' ? 'them' : 'you';
   manualStop = false;
   try {
-    recognition.lang = mode === 'en-th' ? 'en-US' : 'th-TH';
+    recognition.lang = listenAs === 'them' ? 'th-TH' : 'en-US';
     recognition.start();
   } catch {
-    toast('Microphone busy. Try again in a moment.');
+    toast('Microphone busy. Wait a second and try again.');
   }
 }
 function stopMic() {
@@ -1030,8 +1065,8 @@ function stopMic() {
     try { recognition.stop(); } catch {}
   }
   listening = false;
-  $('micBtn').classList.remove('live');
-  $('micBtn').textContent = '🎙';
+  if ($('micBtn')) { $('micBtn').classList.remove('live'); $('micBtn').textContent = '👂 Them'; }
+  if ($('micYouBtn')) $('micYouBtn').classList.remove('primary');
 }
 
 /* ---------- Phrases: [English, Thai, romanization] ---------- */
@@ -1366,11 +1401,13 @@ source.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') translateNow();
 });
 
-$('translateBtn').onclick = translateNow;
-$('micBtn').onclick = () => listening ? stopMic() : startMic();
+if ($('translateBtn')) $('translateBtn').onclick = translateNow;
+if ($('micBtn')) $('micBtn').onclick = () => listening && listenAs === 'them' ? stopMic() : startMic('them');
+if ($('micYouBtn')) $('micYouBtn').onclick = () => listening && listenAs === 'you' ? stopMic() : startMic('you');
 $('stopSpeakBtn').onclick = () => {
   speechSynthesis?.cancel();
-  status('', listening ? 'Listening…' : 'Ready');
+  stopMic();
+  status('', 'Ready');
 };
 if ($('copyBtn')) $('copyBtn').onclick = async () => {
   if (!target.textContent.trim()) { toast('Nothing to copy.'); return; }
@@ -1508,13 +1545,23 @@ $('installBtn').onclick = async () => {
   $('installBtn').hidden = true;
 };
 
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      // Force update on GitHub Pages when a new SW is published
+      try { reg.update(); } catch (_) {}
+    }).catch(() => {});
   });
 }
 
-updateCounts();
+try {
+  updateCounts();
+  syncTalk();
+  renderReplyHelp();
+} catch (err) {
+  console.error(err);
+  status('bad', 'App started with a small error — phrases should still work.');
+}
 })();
 </script>
 </body>
