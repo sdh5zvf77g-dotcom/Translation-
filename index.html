@@ -290,7 +290,7 @@ textarea::placeholder{color:#6e7f99}
       <label for="dialect">Thai regional dialect</label>
       <select id="dialect" style="max-width:58%">
         <option value="standard">Standard (Central)</option>
-        <option value="northern">Northern (Lanna)</option>
+        <option value="northern">Northern · Chiang Mai (Lanna)</option>
         <option value="isan">Northeastern (Isan)</option>
         <option value="southern">Southern</option>
       </select>
@@ -449,7 +449,7 @@ const defaults = {
 
 const DIALECT_LABELS = {
   standard: 'Standard Thai',
-  northern: 'Northern Thai (Lanna)',
+  northern: 'Northern Thai · Chiang Mai (Lanna)',
   isan: 'Isan (Northeastern)',
   southern: 'Southern Thai'
 };
@@ -460,20 +460,30 @@ const DIALECT_LABELS = {
    Standard → Dialect when showing Thai output (best-effort). */
 const DIALECT_PACKS = {
   northern: {
-    // dialect form → standard Thai
+    // Tuned for Chiang Mai / Lanna (Kam Mueang) everyday speech
+    // dialect → Standard (before online translation)
     toStandard: {
-      'เจ้า': 'คุณ', 'กิ๋น': 'กิน', 'อันนี้': 'อันนี้', 'บ่': 'ไม่', 'อยาก': 'อยาก',
-      'หยัง': 'อะไร', 'จั่งใด': 'อย่างไร', 'ลำบาก': 'ลำบาก', 'เฮา': 'เรา',
-      'ปี้': 'ปี', 'กั๊บ': 'กับ', 'จาว': 'ชาว', 'ม่วน': 'สนุก', 'ลำ': 'ลำ',
-      'ตี้': 'ที่', 'นี่': 'นี่', 'กิ๋นข้าว': 'กินข้าว', 'บ่เป็นหยัง': 'ไม่เป็นไร',
-      'ขอบใจ': 'ขอบคุณ', 'สวัสดีเจ้า': 'สวัสดี', 'ไปไหน': 'ไปไหน',
-      'เท่าไหร่': 'เท่าไหร่', 'ห้องน้ำ': 'ห้องน้ำ', 'หมอ': 'หมอ'
+      'เจ้า': 'คุณ', 'กิ๋น': 'กิน', 'บ่': 'ไม่', 'หยัง': 'อะไร', 'จั่งใด': 'อย่างไร',
+      'จะใด': 'อย่างไร', 'เฮา': 'เรา', 'ตี้': 'ที่', 'ขอบใจ': 'ขอบคุณ', 'ขอบใจหลาย': 'ขอบคุณมาก',
+      'สวัสดีเจ้า': 'สวัสดี', 'บ่เป็นหยัง': 'ไม่เป็นไร', 'กิ๋นข้าว': 'กินข้าว',
+      'ม่วน': 'สนุก', 'ม่วนใจ๋': 'สบายใจ', 'ลำบาก': 'ลำบาก', 'อยากกิ๋น': 'อยากกิน',
+      'ไปตี้ไหน': 'ไปที่ไหน', 'อยู่ตี้ไหน': 'อยู่ที่ไหน', 'อันนี้': 'อันนี้',
+      'ราคาเท่าไหร่': 'ราคาเท่าไหร่', 'ห้องน้ำ': 'ห้องน้ำ', 'หมอ': 'หมอ',
+      'น้ำ': 'น้ำ', 'ข้าว': 'ข้าว', 'อร่อย': 'อร่อย', 'แพง': 'แพง', 'ถูก': 'ถูก',
+      'ช่วยด้วย': 'ช่วยด้วย', 'ช่วยเจ้าหน่อย': 'ช่วยหน่อย', 'พูดช้า': 'พูดช้า',
+      'บ่เข้าใจ': 'ไม่เข้าใจ', 'เข้าใจ': 'เข้าใจ', 'ได้บ่': 'ได้ไหม', 'ได้': 'ได้',
+      'แม่': 'แม่', 'พ่อ': 'พ่อ', 'เพื่อน': 'เพื่อน', 'บ้าน': 'บ้าน',
+      'ตลาด': 'ตลาด', 'วัด': 'วัด', 'รถ': 'รถ', 'แท็กซี่': 'แท็กซี่',
+      'กั๊บ': 'กับ', 'จาว': 'ชาว', 'ปี้': 'ปี', 'นี่': 'นี่', 'นั่น': 'นั่น'
     },
-    // standard → dialect (for EN→TH output adaptation)
+    // Standard → Northern (when showing Thai to user in Chiang Mai)
     toDialect: {
       'คุณ': 'เจ้า', 'กิน': 'กิ๋น', 'ไม่': 'บ่', 'อะไร': 'หยัง', 'อย่างไร': 'จั่งใด',
-      'เรา': 'เฮา', 'สนุก': 'ม่วน', 'ที่': 'ตี้', 'ขอบคุณ': 'ขอบใจ',
-      'สวัสดี': 'สวัสดีเจ้า', 'ไม่เป็นไร': 'บ่เป็นหยัง', 'กินข้าว': 'กิ๋นข้าว'
+      'เรา': 'เฮา', 'ที่': 'ตี้', 'ขอบคุณ': 'ขอบใจ', 'ขอบคุณมาก': 'ขอบใจหลาย',
+      'สวัสดี': 'สวัสดีเจ้า', 'ไม่เป็นไร': 'บ่เป็นหยัง', 'กินข้าว': 'กิ๋นข้าว',
+      'สนุก': 'ม่วน', 'สบายใจ': 'ม่วนใจ๋', 'อยากกิน': 'อยากกิ๋น',
+      'ไปที่ไหน': 'ไปตี้ไหน', 'อยู่ที่ไหน': 'อยู่ตี้ไหน', 'ได้ไหม': 'ได้บ่',
+      'ไม่เข้าใจ': 'บ่เข้าใจ', 'ช่วยหน่อย': 'ช่วยเจ้าหน่อย', 'พูดช้า': 'พูดช้า ๆ'
     }
   },
   isan: {
@@ -570,9 +580,11 @@ function updateDialectNote() {
   if (!note) return;
   const d = settings.dialect || 'standard';
   if (d === 'standard') {
-    note.textContent = 'Uses Standard (Central) Thai — the form taught in schools and used in media.';
+    note.textContent = 'Uses Standard (Central) Thai — the form taught in schools and used in media. Understood everywhere including Chiang Mai.';
+  } else if (d === 'northern') {
+    note.textContent = 'Chiang Mai / Lanna pack active. Common Northern words and phrases are adapted on this device so local people understand more naturally. Still based on Standard Thai engines.';
   } else {
-    note.textContent = dialectLabel() + ' pack is active on this device. Common words are adapted before/after online translation. Full neural dialect models are not available in browsers; this is the best on-phone adaptation possible.';
+    note.textContent = dialectLabel() + ' pack is active on this device. Common words are adapted before/after online translation. Full neural dialect models are not available in browsers.';
   }
 }
 
@@ -969,19 +981,25 @@ const phrasesByDialect = {
   northern: [
     ['Hello', 'สวัสดีเจ้า'],
     ['Thank you', 'ขอบใจ'],
-    ['How much is this?', 'อันนี้ราคาเท่าไหร่'],
+    ['Thank you very much', 'ขอบใจหลาย'],
+    ['How much is this?', 'อันนี้ราคาเท่าไหร่เจ้า'],
     ['Please help me', 'ช่วยเจ้าหน่อย'],
     ['Where is the bathroom?', 'ห้องน้ำอยู่ตี้ไหน'],
     ['I don’t understand', 'เจ้าบ่เข้าใจ'],
     ['Can you speak slowly?', 'พูดช้า ๆ ได้บ่'],
+    ['It’s okay / No problem', 'บ่เป็นหยัง'],
     ['The bill, please', 'เก็บเงินด้วยเจ้า'],
     ['I would like water', 'ขอน้ำหน่อยเจ้า'],
+    ['I want to eat', 'อยากกิ๋น'],
+    ['Delicious!', 'ม่วนมาก / อร่อย'],
+    ['Where is the market?', 'ตลาดอยู่ตี้ไหน'],
+    ['Where is the temple?', 'วัดอยู่ตี้ไหน'],
     ['I need a doctor', 'อยากเจอหมอ'],
     ['I’m allergic to…', 'เจ้าแพ้…'],
     ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้บ่'],
     ['Where is the station?', 'สถานีอยู่ตี้ไหน'],
     ['Do you speak English?', 'เจ้าพูดภาษาอังกฤษได้บ่'],
-    ['Delicious!', 'ม่วนมาก'],
+    ['Where are you going?', 'ไปตี้ไหน'],
     ['See you later', 'แล้วเจอกัน']
   ],
   isan: [
