@@ -287,6 +287,18 @@ textarea::placeholder{color:#6e7f99}
   <!-- Settings -->
   <section class="panel" id="settingsPanel" aria-label="Settings">
     <div class="setting">
+      <label for="dialect">Thai regional dialect</label>
+      <select id="dialect" style="max-width:58%">
+        <option value="standard">Standard (Central)</option>
+        <option value="northern">Northern (Lanna)</option>
+        <option value="isan">Northeastern (Isan)</option>
+        <option value="southern">Southern</option>
+      </select>
+    </div>
+    <p class="notice" id="dialectNote" style="text-align:left;margin:0 0 8px;padding:0">
+      On-device dialect packs adapt common words. Full neural dialect models are not available in browsers.
+    </p>
+    <div class="setting">
       <label for="autoSpeak">Speak translation automatically</label>
       <button class="switch on" id="autoSpeak" role="switch" aria-checked="true"></button>
     </div>
@@ -431,7 +443,66 @@ const defaults = {
   rate: 1,
   voiceEn: '',
   voiceTh: '',
-  autoTranslate: true
+  autoTranslate: true,
+  dialect: 'standard'
+};
+
+const DIALECT_LABELS = {
+  standard: 'Standard Thai',
+  northern: 'Northern Thai (Lanna)',
+  isan: 'Isan (Northeastern)',
+  southern: 'Southern Thai'
+};
+
+/* On-device dialect adaptation packs (common everyday words).
+   These run entirely on the phone — no download required.
+   Dialect → Standard before sending to the translator;
+   Standard → Dialect when showing Thai output (best-effort). */
+const DIALECT_PACKS = {
+  northern: {
+    // dialect form → standard Thai
+    toStandard: {
+      'เจ้า': 'คุณ', 'กิ๋น': 'กิน', 'อันนี้': 'อันนี้', 'บ่': 'ไม่', 'อยาก': 'อยาก',
+      'หยัง': 'อะไร', 'จั่งใด': 'อย่างไร', 'ลำบาก': 'ลำบาก', 'เฮา': 'เรา',
+      'ปี้': 'ปี', 'กั๊บ': 'กับ', 'จาว': 'ชาว', 'ม่วน': 'สนุก', 'ลำ': 'ลำ',
+      'ตี้': 'ที่', 'นี่': 'นี่', 'กิ๋นข้าว': 'กินข้าว', 'บ่เป็นหยัง': 'ไม่เป็นไร',
+      'ขอบใจ': 'ขอบคุณ', 'สวัสดีเจ้า': 'สวัสดี', 'ไปไหน': 'ไปไหน',
+      'เท่าไหร่': 'เท่าไหร่', 'ห้องน้ำ': 'ห้องน้ำ', 'หมอ': 'หมอ'
+    },
+    // standard → dialect (for EN→TH output adaptation)
+    toDialect: {
+      'คุณ': 'เจ้า', 'กิน': 'กิ๋น', 'ไม่': 'บ่', 'อะไร': 'หยัง', 'อย่างไร': 'จั่งใด',
+      'เรา': 'เฮา', 'สนุก': 'ม่วน', 'ที่': 'ตี้', 'ขอบคุณ': 'ขอบใจ',
+      'สวัสดี': 'สวัสดีเจ้า', 'ไม่เป็นไร': 'บ่เป็นหยัง', 'กินข้าว': 'กิ๋นข้าว'
+    }
+  },
+  isan: {
+    toStandard: {
+      'เจ้า': 'คุณ', 'กิน': 'กิน', 'บ่': 'ไม่', 'หยัง': 'อะไร', 'จังได': 'อย่างไร',
+      'เฮา': 'เรา', 'ม่วน': 'สนุก', 'ตี้': 'ที่', 'ขอบใจ': 'ขอบคุณ',
+      'สวัสดี': 'สวัสดี', 'บ่เป็นหยัง': 'ไม่เป็นไร', 'กินข้าว': 'กินข้าว',
+      'ใหย่': 'ใหญ่', 'น้อย': 'น้อย', 'แล้วนะ': 'แล้วนะ', 'เด้อ': '',
+      'ครับ': 'ครับ', 'ค่ะ': 'ค่ะ', 'อยู่ใส': 'อยู่ไหน', 'ไปไส': 'ไปไหน',
+      'อันนี้': 'อันนี้', 'ราคา': 'ราคา', 'เท่าใด': 'เท่าไหร่', 'ห้องน้ำ': 'ห้องน้ำ'
+    },
+    toDialect: {
+      'คุณ': 'เจ้า', 'ไม่': 'บ่', 'อะไร': 'หยัง', 'อย่างไร': 'จังได',
+      'เรา': 'เฮา', 'สนุก': 'ม่วน', 'ที่': 'ตี้', 'ขอบคุณ': 'ขอบใจ',
+      'ไม่เป็นไร': 'บ่เป็นหยัง', 'ใหญ่': 'ใหย่', 'อยู่ไหน': 'อยู่ใส',
+      'ไปไหน': 'ไปไส', 'เท่าไหร่': 'เท่าใด'
+    }
+  },
+  southern: {
+    toStandard: {
+      'แอ': 'คุณ', 'กิน': 'กิน', 'ไม': 'ไม่', 'อะไร': 'อะไร', 'ยังไง': 'อย่างไร',
+      'เรา': 'เรา', 'สนุก': 'สนุก', 'ที่': 'ที่', 'ขอบคุณ': 'ขอบคุณ',
+      'สวัสดี': 'สวัสดี', 'ไม่เป็นไร': 'ไม่เป็นไร', 'หนิ': '', 'นา': '',
+      'หรอย': 'อร่อย', 'แหลง': 'พูด', 'ไปไหน': 'ไปไหน', 'เท่าไหร่': 'เท่าไหร่'
+    },
+    toDialect: {
+      'คุณ': 'แอ', 'อร่อย': 'หรอย', 'พูด': 'แหลง', 'ไม่': 'ไม'
+    }
+  }
 };
 
 let settings = { ...defaults };
@@ -486,7 +557,49 @@ function status(kind, msg) {
   $('status').textContent = msg;
 }
 function fromTo() {
+  // Core language codes stay Standard Thai (`th`). Dialects are preference + best-effort.
   return mode === 'en-th' ? ['en', 'th'] : ['th', 'en'];
+}
+
+function dialectLabel() {
+  return DIALECT_LABELS[settings.dialect] || DIALECT_LABELS.standard;
+}
+
+function updateDialectNote() {
+  const note = $('dialectNote');
+  if (!note) return;
+  const d = settings.dialect || 'standard';
+  if (d === 'standard') {
+    note.textContent = 'Uses Standard (Central) Thai — the form taught in schools and used in media.';
+  } else {
+    note.textContent = dialectLabel() + ' pack is active on this device. Common words are adapted before/after online translation. Full neural dialect models are not available in browsers; this is the best on-phone adaptation possible.';
+  }
+}
+
+/** Replace whole words using a map (Thai has no spaces — use simple includes + boundary-ish replace). */
+function applyWordMap(text, map) {
+  if (!text || !map) return text;
+  let out = text;
+  // Longer keys first so multi-syllable forms win
+  const keys = Object.keys(map).sort((a, b) => b.length - a.length);
+  for (const k of keys) {
+    if (!k) continue;
+    const re = new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    out = out.replace(re, map[k]);
+  }
+  return out.replace(/\s{2,}/g, ' ').trim();
+}
+
+function dialectToStandard(text) {
+  const d = settings.dialect || 'standard';
+  if (d === 'standard' || !DIALECT_PACKS[d]) return text;
+  return applyWordMap(text, DIALECT_PACKS[d].toStandard);
+}
+
+function standardToDialect(text) {
+  const d = settings.dialect || 'standard';
+  if (d === 'standard' || !DIALECT_PACKS[d]) return text;
+  return applyWordMap(text, DIALECT_PACKS[d].toDialect);
 }
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c =>
@@ -528,10 +641,19 @@ function updateCounts() {
 
 /* ---------- Translation ---------- */
 async function requestTranslation(text, from, to, signal) {
+  // Always use Standard Thai code. Dialects are a user preference for labeling + best-effort.
+  // For Isan (Thai→English) we optionally try Lao as a secondary hint because of linguistic closeness.
+  const dialect = settings.dialect || 'standard';
   const urls = [
     `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`,
     `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`
   ];
+  // Experimental: if user selected Isan and translating Thai → English, also try Lao endpoint
+  if (dialect === 'isan' && from === 'th' && to === 'en') {
+    urls.push(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=lo&tl=en&dt=t&q=${encodeURIComponent(text)}`
+    );
+  }
   let lastErr;
   for (let i = 0; i < urls.length; i++) {
     try {
@@ -539,14 +661,17 @@ async function requestTranslation(text, from, to, signal) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const d = await r.json();
       let out = '';
-      if (i === 0) {
+      const isGoogle = urls[i].includes('googleapis');
+      if (isGoogle) {
         out = Array.isArray(d?.[0]) ? d[0].map(x => x?.[0] || '').join('') : '';
       } else {
         out = d?.responseData?.translatedText || '';
         if (d?.responseStatus && String(d.responseStatus) !== '200') throw new Error('MyMemory status');
       }
       if (typeof out === 'string' && out.trim()) {
-        return { text: out.trim(), service: i === 0 ? 'Google Translate' : 'MyMemory' };
+        let service = isGoogle ? 'Google Translate' : 'MyMemory';
+        if (dialect !== 'standard') service += ' · ' + dialectLabel();
+        return { text: out.trim(), service };
       }
       throw new Error('Empty result');
     } catch (e) {
@@ -568,15 +693,25 @@ async function translateNow() {
   status('busy', 'Translating…');
   $('translateBtn').disabled = true;
   try {
-    const result = await requestTranslation(text, from, to, controller.signal);
+    // When user is typing/speaking Thai in a regional dialect, normalize to Standard first
+    let sendText = text;
+    if (from === 'th' && settings.dialect !== 'standard') {
+      sendText = dialectToStandard(text);
+    }
+    const result = await requestTranslation(sendText, from, to, controller.signal);
     if (n !== requestNo) return;
-    target.textContent = result.text;
+    let out = result.text;
+    // When translating into Thai, adapt Standard output toward the chosen dialect
+    if (to === 'th' && settings.dialect !== 'standard') {
+      out = standardToDialect(out);
+    }
+    target.textContent = out;
     $('serviceLabel').textContent = result.service;
     lastTranslated = text;
     updateCounts();
-    addHistory(text, result.text);
+    addHistory(text, out);
     status('good', 'Ready · ' + result.service);
-    if (settings.autoSpeak) speak(result.text, to === 'th' ? 'th-TH' : 'en-US');
+    if (settings.autoSpeak) speak(out, to === 'th' ? 'th-TH' : 'en-US');
   } catch (e) {
     if (e.name === 'AbortError') return;
     status('bad', 'Could not translate. Check connection.');
@@ -808,8 +943,8 @@ function stopMic() {
   $('micBtn').textContent = '🎙';
 }
 
-/* ---------- Phrases ---------- */
-const phrases = [
+/* ---------- Phrases (Standard + dialect variants) ---------- */
+const phrasesStandard = [
   ['Hello', 'สวัสดี'],
   ['Thank you', 'ขอบคุณ'],
   ['How much is this?', 'อันนี้ราคาเท่าไหร่'],
@@ -828,8 +963,73 @@ const phrases = [
   ['See you later', 'แล้วเจอกัน']
 ];
 
+// Dialect-specific Thai side (English stays the same)
+const phrasesByDialect = {
+  standard: phrasesStandard,
+  northern: [
+    ['Hello', 'สวัสดีเจ้า'],
+    ['Thank you', 'ขอบใจ'],
+    ['How much is this?', 'อันนี้ราคาเท่าไหร่'],
+    ['Please help me', 'ช่วยเจ้าหน่อย'],
+    ['Where is the bathroom?', 'ห้องน้ำอยู่ตี้ไหน'],
+    ['I don’t understand', 'เจ้าบ่เข้าใจ'],
+    ['Can you speak slowly?', 'พูดช้า ๆ ได้บ่'],
+    ['The bill, please', 'เก็บเงินด้วยเจ้า'],
+    ['I would like water', 'ขอน้ำหน่อยเจ้า'],
+    ['I need a doctor', 'อยากเจอหมอ'],
+    ['I’m allergic to…', 'เจ้าแพ้…'],
+    ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้บ่'],
+    ['Where is the station?', 'สถานีอยู่ตี้ไหน'],
+    ['Do you speak English?', 'เจ้าพูดภาษาอังกฤษได้บ่'],
+    ['Delicious!', 'ม่วนมาก'],
+    ['See you later', 'แล้วเจอกัน']
+  ],
+  isan: [
+    ['Hello', 'สวัสดี'],
+    ['Thank you', 'ขอบใจเด้อ'],
+    ['How much is this?', 'อันนี้ราคาเท่าใด'],
+    ['Please help me', 'ช่วยเจ้าหน่อย'],
+    ['Where is the bathroom?', 'ห้องน้ำอยู่ใส'],
+    ['I don’t understand', 'เจ้าบ่เข้าใจ'],
+    ['Can you speak slowly?', 'พูดช้า ๆ ได้บ่'],
+    ['The bill, please', 'เก็บเงินด้วยเด้อ'],
+    ['I would like water', 'ขอน้ำหน่อยเด้อ'],
+    ['I need a doctor', 'อยากเจอหมอ'],
+    ['I’m allergic to…', 'เจ้าแพ้…'],
+    ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้บ่'],
+    ['Where is the station?', 'สถานีอยู่ใส'],
+    ['Do you speak English?', 'เจ้าพูดภาษาอังกฤษได้บ่'],
+    ['Delicious!', 'แซบหลาย'],
+    ['See you later', 'แล้วพบกัน']
+  ],
+  southern: [
+    ['Hello', 'สวัสดี'],
+    ['Thank you', 'ขอบคุณ'],
+    ['How much is this?', 'อันนี้ราคาเท่าไหร่'],
+    ['Please help me', 'ช่วยแอหน่อย'],
+    ['Where is the bathroom?', 'ห้องน้ำอยู่ที่ไหน'],
+    ['I don’t understand', 'แอไม่เข้าใจ'],
+    ['Can you speak slowly?', 'แหลงช้า ๆ ได้ไหม'],
+    ['The bill, please', 'เก็บเงินด้วย'],
+    ['I would like water', 'ขอน้ำหน่อย'],
+    ['I need a doctor', 'อยากเจอหมอ'],
+    ['I’m allergic to…', 'แอแพ้…'],
+    ['Can you write it down?', 'ช่วยเขียนให้หน่อยได้ไหม'],
+    ['Where is the station?', 'สถานีอยู่ที่ไหน'],
+    ['Do you speak English?', 'แอแหลงภาษาอังกฤษได้ไหม'],
+    ['Delicious!', 'หรอยมาก'],
+    ['See you later', 'แล้วเจอกัน']
+  ]
+};
+
+function currentPhrases() {
+  const d = settings.dialect || 'standard';
+  return phrasesByDialect[d] || phrasesStandard;
+}
+
 function renderPhrases() {
-  $('phraseGrid').innerHTML = phrases.map((p, i) =>
+  const list = currentPhrases();
+  $('phraseGrid').innerHTML = list.map((p, i) =>
     `<button class="phrase" data-phrase="${i}" type="button">
       ${esc(mode === 'en-th' ? p[0] : p[1])}
       <span>${esc(mode === 'en-th' ? p[1] : p[0])}</span>
@@ -915,6 +1115,17 @@ for (const [id, key] of [['voiceEn', 'voiceEn'], ['voiceTh', 'voiceTh']]) {
     persist();
   };
 }
+
+$('dialect').value = settings.dialect || 'standard';
+updateDialectNote();
+$('dialect').onchange = () => {
+  settings.dialect = $('dialect').value;
+  persist();
+  updateDialectNote();
+  toast('Dialect set to ' + dialectLabel());
+  // Re-render phrases so any dialect-aware labels stay consistent
+  renderPhrases();
+};
 
 $('testEn').onclick = () => testVoice('en-US');
 $('testTh').onclick = () => testVoice('th-TH');
@@ -1003,7 +1214,8 @@ $('phrasesToggle').onclick = () => {
 $('phraseGrid').onclick = e => {
   const b = e.target.closest('[data-phrase]');
   if (!b) return;
-  const p = phrases[Number(b.dataset.phrase)];
+  const p = currentPhrases()[Number(b.dataset.phrase)];
+  if (!p) return;
   source.value = mode === 'en-th' ? p[0] : p[1];
   updateCounts();
   translateNow();
